@@ -342,7 +342,7 @@ class GeneralKnowledge(SimpleKnowledge):
         order: List[str] = []
 
         for d in raw_docs:
-            parent_text = getattr(d.metadata, "parent_text", None)
+            parent_text = d.metadata.get("parent_text")
             if not parent_text:
                 continue
 
@@ -420,8 +420,8 @@ class GeneralKnowledge(SimpleKnowledge):
                 }
                 
                 # 添加额外字段 (如 parent_text)
-                if hasattr(doc.metadata, "parent_text"):
-                    payload["parent_text"] = doc.metadata.parent_text
+                if "parent_text" in doc.metadata:
+                    payload["parent_text"] = doc.metadata["parent_text"]
 
                 points.append(
                     models.PointStruct(

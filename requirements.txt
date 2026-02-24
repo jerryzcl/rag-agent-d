@@ -1,19 +1,23 @@
 # ai_contract 项目依赖
 
 # Agent 框架
-agentscope
+agentscope==1.0.13
+
+# 大模型 API & 嵌入
+dashscope==1.24.10
 
 # Web 框架
-fastapi
-uvicorn
-sse-starlette
+fastapi==0.115.14
+uvicorn==0.34.3
+sse-starlette==2.3.6
 
 # 数据验证
-pydantic
+pydantic==2.11.10
 
-# 向量数据库
-qdrant-client
+# 向量数据库 & 混合检索
+qdrant-client==1.16.2
+fastembed==0.7.4
 
 # 文档解析
-pymupdf
-python-docx
+pymupdf==1.26.7
+python-docx==1.2.0

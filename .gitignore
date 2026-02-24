@@ -70,3 +70,4 @@ tests/load/reports/*
 
 # cache
 module/dataset/qdrant_data/embedding_cache/
+module/dataset/qdrant_data/sparse_model_cache/
