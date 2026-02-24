@@ -1,0 +1,19 @@
+# ai_contract 项目依赖
+
+# Agent 框架
+agentscope
+
+# Web 框架
+fastapi
+uvicorn
+sse-starlette
+
+# 数据验证
+pydantic
+
+# 向量数据库
+qdrant-client
+
+# 文档解析
+pymupdf
+python-docx

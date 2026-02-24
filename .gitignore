@@ -1,0 +1,72 @@
+# .gitignore
+
+# Environment variables
+.env*
+!/.env.example
+
+# PyCharm
+.idea/
+
+# VS Code
+.vscode/
+
+# Python
+__pycache__/
+*.pyc
+*.py[cod]
+*$py.class
+*.so
+build/
+dist/
+*.egg-info/
+
+# Virtual environments
+venv/
+env/
+ENV/
+
+# logs
+logs/
+
+# Testing and Coverage
+.pytest_cache/
+.coverage
+htmlcov/
+*.cover
+.hypothesis/
+
+# MyPy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Jupyter
+.ipynb_checkpoints
+
+# Load Testing
+load_tests/reports/*.html
+load_tests/reports/*.log
+load_tests/reports/*.csv
+
+# Backup and temporary files
+*.bak
+* - 副本.*
+*.tmp
+*.temp
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# notebook
+notebooks/
+
+# AI agent rules
+.agent/rules/environment-info.md
+
+# LoadTest
+tests/load/reports/*
+
+# cache
+module/dataset/qdrant_data/embedding_cache/

@@ -1,0 +1,50 @@
+# Docker Compose 配置 - 用于生产部署
+# 启动命令: docker-compose up -d
+
+
+services:
+  ai-contract:
+    # 构建镜像的指令
+    build:
+      context: .
+    image: 10.60.1.116/ai-service_ai-contract/ai_contract:latest
+    container_name: ai_contract
+
+    # 环境变量配置
+    env_file:
+      - ./.env
+
+    # 端口映射
+    ports:
+      - "19991:19991"
+
+    environment:
+      - LOG_DIR=/app/logs
+
+    # 数据卷挂载
+    volumes:
+      - /docker/ai_contract/ai-contract/logs:/app/logs
+      - /docker/ai_contract/ai-contract/module/dataset:/app/module/dataset
+
+    # 重启策略
+    restart: always
+
+    # 启动命令
+    command: python main.py
+
+    # 健康检查
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:19991/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+    # 加入内部网络
+    networks:
+      - ai-network
+
+# 自定义网络
+networks:
+  ai-network:
+    driver: bridge
