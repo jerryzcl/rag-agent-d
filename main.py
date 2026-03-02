@@ -15,7 +15,7 @@ from timeout_retry import execute_stream_with_retry
 
 app = FastAPI()
 
-
+knowledge = GeneralKnowledge(mode="parent_child", db_name="qdrant_data", collection_name="law_knowledge")
 @app.post("/agentscope/chat/stream")
 async def chat_stream(request: RequestModel):
     """
@@ -34,13 +34,13 @@ async def chat_stream(request: RequestModel):
 
         # 初始化 ReAct Agent
         if request.llm_config.get("knowledge", False):
-            knowledge = GeneralKnowledge(mode="general", db_name="qdrant_data", collection_name="law_knowledge", enable_hybrid=True)
             agent = ReActAgent(
                 name="llm_agent",
                 model=model,
                 sys_prompt=request.system_prompt,
                 formatter=DashScopeChatFormatter(),
-                knowledge=knowledge
+                knowledge=knowledge,
+                print_hint_msg=True
             )
         else:
             agent = ReActAgent(
