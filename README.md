@@ -1,93 +1,107 @@
-# ai-contract
+# 项目概要
 
+## 项目概述
 
+**AI Contract** 是一个基于 FastAPI 和 AgentScope 构建的智能合同助手后端服务。该项目主要提供流式对话 API，支持检索增强生成（RAG）功能，能够基于法律知识库进行智能问答。
 
-## Getting started
+## 技术架构
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+### 核心技术栈
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
+| 组件 | 技术 |
+|------|------|
+| Web 框架 | FastAPI |
+| AI Agent 框架 | AgentScope (阿里云) |
+| 大语言模型 | DashScope (阿里云) |
+| 向量数据库 | Qdrant |
+| 稀疏向量模型 | FastEmbed (BM25) |
+| 文本嵌入 | DashScope Text Embedding V4 |
+| 部署 | Docker / Docker Compose |
 
-## Add your files
-
-- [ ] [Create](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#create-a-file) or [upload](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#upload-a-file) files
-- [ ] [Add files using the command line](https://docs.gitlab.com/topics/git/add_files/#add-files-to-a-git-repository) or push an existing Git repository with the following command:
+### 项目结构
 
 ```
-cd existing_repo
-git remote add origin https://10.60.1.115/ai/ai-services/ai-contract.git
-git branch -M main
-git push -uf origin main
+ai_contract/
+├── main.py                      # FastAPI 主入口，流式对话 API
+├── models.py                    # Pydantic 数据模型
+├── timeout_retry.py             # 异步流式重试逻辑
+├── module/
+│   └── knowledge_base/          # 知识库 RAG 模块
+│       ├── general_knowledge.py # 知识库核心类（支持混合检索）
+│       ├── general_rag.py       # RAG 系统（文档处理与索引）
+│       ├── _sparse_embedding.py  # BM25 稀疏向量模型
+│       └── _reader/             # 文档读取器
+│           ├── _document_reader.py  # 通用文档读取/分块
+│           └── _word_reader.py      # Word 文档读取
+├── dataset/
+│   └── qdrant_data/            # Qdrant 向量数据库存储
+├── Dockerfile
+└── docker-compose.yml
 ```
 
-## Integrate with your tools
+## 核心功能
 
-- [ ] [Set up project integrations](https://10.60.1.115/ai/ai-services/ai-contract/-/settings/integrations)
+### 1. 流式对话 API (`/agentscope/chat/stream`)
 
-## Collaborate with your team
+- 支持 SSE (Server-Sent Events) 流式输出
+- 集成 AgentScope ReActAgent 智能体
+- 支持配置 LLM 参数（模型、温度、思考模式等）
+- 包含超时重试机制，防止网络中断
 
-- [ ] [Invite team members and collaborators](https://docs.gitlab.com/ee/user/project/members/)
-- [ ] [Create a new merge request](https://docs.gitlab.com/ee/user/project/merge_requests/creating_merge_requests.html)
-- [ ] [Automatically close issues from merge requests](https://docs.gitlab.com/ee/user/project/issues/managing_issues.html#closing-issues-automatically)
-- [ ] [Enable merge request approvals](https://docs.gitlab.com/ee/user/project/merge_requests/approvals/)
-- [ ] [Set auto-merge](https://docs.gitlab.com/user/project/merge_requests/auto_merge/)
+### 2. 知识库 RAG 系统
 
-## Test and Deploy
+- **文档支持**: PDF、DOCX、TXT、MD、DOC
+- **分段模式**: 
+  - `general`: 通用分段
+  - `parent_child`: 父子分段（更大块召回，更小块精检）
+- **检索模式**:
+  - 纯向量检索 (Dense-only)
+  - 混合检索 (Hybrid): BM25 关键词 + 向量相似度，使用 RRF 融合排名
 
-Use the built-in continuous integration in GitLab.
+### 3. 智能重试机制
 
-- [ ] [Get started with GitLab CI/CD](https://docs.gitlab.com/ee/ci/quick_start/)
-- [ ] [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/ee/user/application_security/sast/)
-- [ ] [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/ee/topics/autodevops/requirements.html)
-- [ ] [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/ee/user/clusters/agent/)
-- [ ] [Set up protected environments](https://docs.gitlab.com/ee/ci/environments/protected_environments.html)
+- 异步生成器的超时控制
+- 指数退避重试策略
+- 流式响应中断处理
 
-***
+## API 接口
 
-# Editing this README
+| 接口 | 方法 | 说明 |
+|------|------|------|
+| `/agentscope/chat/stream` | POST | 流式对话接口 |
+| `/health` | GET | 健康检查 |
 
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
+## 请求/响应格式
 
-## Suggestions for a good README
+**RequestModel**:
+```python
+{
+    "system_prompt": "系统提示词",
+    "user_msg": "用户消息",
+    "llm_config": {
+        "model": "模型名称",
+        "temperature": 0.7,
+        "enable_thinking": false,
+        "knowledge": true  # 是否启用知识库
+    }
+}
+```
 
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
+**ResponseModel**:
+```python
+{
+    "status": 0,  # 0:OK, 1:ERROR, 6:TIMEOUT_RETRY
+    "content": "增量内容"
+}
+```
 
-## Name
-Choose a self-explaining name for your project.
+## 部署方式
 
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
+项目支持 Docker 部署，可通过 `docker-compose up` 快速启动服务（默认端口 19991）。
 
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
+---
 
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
-
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
-
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
-
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
-
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
-
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
-
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
-
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
-
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
-
-## License
-For open source projects, say how it is licensed.
-
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+如需了解更多细节，可以查看具体模块的源码：
+- [main.py](file:///d:\project\ai_contract\main.py) - API 入口
+- [general_knowledge.py](file:///d:\project\ai_contract\module\knowledge_base\general_knowledge.py) - 知识库核心
+- [general_rag.py](file:///d:\project\ai_contract\module\knowledge_base\general_rag.py) - RAG 系统

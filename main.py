@@ -4,18 +4,46 @@ from agentscope.message import Msg
 from agentscope.model import DashScopeChatModel
 from agentscope.pipeline import stream_printing_messages
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 import os
 import uvicorn
+from pydantic import BaseModel
 from sse_starlette import EventSourceResponse
 
 from models import RequestModel, ResponseModel, ResponseStatus
 from module.knowledge_base.general_knowledge import GeneralKnowledge
+from agent_qa import KnowledgeBaseQAAgent
 from timeout_retry import execute_stream_with_retry
 
 app = FastAPI()
 
 knowledge = GeneralKnowledge(mode="parent_child", db_name="qdrant_data", collection_name="law_knowledge")
+
+qa_agent = KnowledgeBaseQAAgent(
+    model=DashScopeChatModel(
+        model_name="qwen-max",
+        api_key=os.getenv("DASH_SCOPE_API_KEY"), # type: ignore
+        stream=False,
+    ),
+    knowledge=knowledge,
+    correct_threshold=0.7,
+    incorrect_threshold=0.4,
+)
+
+
+class QARequest(BaseModel):
+    query: str
+
+
+@app.post("/agent/qa")
+async def knowledge_base_qa(request: QARequest):
+    try:
+        result = await qa_agent.ask(request.query)
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @app.post("/agentscope/chat/stream")
 async def chat_stream(request: RequestModel):
     """
@@ -26,7 +54,7 @@ async def chat_stream(request: RequestModel):
         # 初始化 DashScope 模型，配置 API Key 和生成参数
         model = DashScopeChatModel(
             model_name=request.llm_config["model"],
-            api_key=os.getenv("DASH_SCOPE_API_KEY"),
+            api_key=os.getenv("DASH_SCOPE_API_KEY"), # type: ignore
             stream=True,
             generate_kwargs={"temperature": request.llm_config["temperature"]},
             enable_thinking=request.llm_config.get("enable_thinking", False)
