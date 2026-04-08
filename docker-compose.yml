@@ -7,7 +7,7 @@ services:
     # 构建镜像的指令
     build:
       context: .
-    image: 10.60.1.116/ai-service_ai-contract/ai_contract:latest
+    image: xxx/ai-service_ai-contract/ai_contract:latest
     container_name: ai_contract
 
     # 环境变量配置

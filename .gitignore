@@ -64,6 +64,7 @@ notebooks/
 
 # AI agent rules
 .agent/rules/environment-info.md
+.trae/
 
 # LoadTest
 tests/load/reports/*
